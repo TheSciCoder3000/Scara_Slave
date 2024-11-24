@@ -28,7 +28,6 @@ Stepper stepper2;
 Stepper stepper3;
 Stepper stepper4;
 
-String received;
 void receiveEvent(int);
 void move_stepper();
 int x;
@@ -84,9 +83,9 @@ void loop()
 // this function is registered as an event, see setup()
 void receiveEvent(int howMany)
 {
-  received = "";
+  String received = "";
 
-  while (1 < Wire.available()) // loop through all but the last
+  while (Wire.available() > 1) // loop through all but the last
   {
     char c = Wire.read(); // receive byte as a character
     received += c;
@@ -97,6 +96,9 @@ void receiveEvent(int howMany)
     return;
 
   String outputType = received.substring(0, 4); // select the first 4 characters of command
+
+  // Serial.println("Command: " + received);
+  // Serial.println("command received");
 
   if (outputType == "SERV")
   {
@@ -132,7 +134,7 @@ void receiveEvent(int howMany)
       break;
     }
 
-    Serial.println("Motor: " + String(motor_num) + " \t | Steps: " + String(motor_steps) + " \t | direction: " + String((motor_direction == 0 ? "Counter Clockwise" : "Clockwise")));
+    // Serial.println("Motor: " + String(motor_num) + " \t | Steps: " + String(motor_steps) + " \t | direction: " + String((motor_direction == 0 ? "Counter Clockwise" : "Clockwise")));
   }
   else if (outputType == "RESO")
   {
@@ -143,6 +145,40 @@ void receiveEvent(int howMany)
     digitalWrite(MS1, ms1);
     digitalWrite(MS2, ms2);
     digitalWrite(MS3, ms3);
+  }
+  else if (outputType == "DELA")
+  {
+
+    int delay = received.substring(4, received.length()).toInt();
+
+    stepper1.setDelay(delay);
+    stepper2.setDelay(delay);
+    stepper3.setDelay(delay);
+    stepper4.setDelay(delay);
+  }
+  else if (outputType == "STOP")
+  {
+    int motor = received.substring(4, 5).toInt();
+
+    switch (motor)
+    {
+    case 1:
+      motor1_steps = 0;
+      break;
+    case 2:
+      motor2_steps = 0;
+      break;
+    case 3:
+      motor3_steps = 0;
+      break;
+    case 4:
+      motor4_steps = 0;
+      break;
+
+    default:
+      Serial.println("Invalid STOP Command!");
+      break;
+    }
   }
 }
 

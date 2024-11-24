@@ -10,12 +10,17 @@ void Stepper::begin(int dir_pin, int step_pin)
     DIR_PIN = dir_pin;
 }
 
+void Stepper::setDelay(int delay)
+{
+    DELAY_NUM = delay;
+}
+
 void Stepper::step()
 {
     digitalWrite(STEP_PIN, HIGH);
-    delayMicros(700);
+    delayMicros(DELAY_NUM);
     digitalWrite(STEP_PIN, LOW);
-    delayMicros(700);
+    delayMicros(DELAY_NUM);
 }
 
 void Stepper::setDir(int direction)
