@@ -191,6 +191,68 @@ void receiveEvent(int howMany)
 
     // Serial.println("Motor: " + String(motor_num) + " \t | Steps: " + String(motor_steps) + " \t | direction: " + String((motor_direction == 0 ? "Counter Clockwise" : "Clockwise")));
   }
+  else if (outputType == "STED")
+  {
+    int motor_num = received.substring(4, 5).toInt();
+    int motor_delay = received.substring(7, received.length()).toInt();
+    int motor_direction = (received.substring(5, 7) == "CC" ? 0 : 1);
+
+    switch (motor_num)
+    {
+    case 1:
+      motor1_direction = motor_direction;
+      if (motor_delay == 0)
+      {
+        motor1_steps = 0;
+      }
+      else
+      {
+        stepper1.setDelay(motor_delay);
+        motor1_steps = 100;
+      }
+      break;
+    case 2:
+      motor2_direction = motor_direction;
+      if (motor_delay == 0)
+      {
+        motor2_steps = 0;
+      }
+      else
+      {
+        stepper2.setDelay(motor_delay);
+        motor2_steps = 100;
+      }
+      break;
+    case 3:
+      motor3_direction = motor_direction;
+      if (motor_delay == 0)
+      {
+        motor3_steps = 0;
+      }
+      else
+      {
+        stepper3.setDelay(motor_delay);
+        motor3_steps = 100;
+      }
+      break;
+    case 4:
+      motor4_direction = motor_direction;
+      if (motor_delay == 0)
+      {
+        motor4_steps = 0;
+      }
+      else
+      {
+        stepper4.setDelay(motor_delay);
+        motor4_steps = 100;
+      }
+      break;
+
+    default:
+      Serial.println("Invalid STEP Command!");
+      break;
+    }
+  }
   else if (outputType == "RESO")
   {
     int motor_index = received.substring(4, 5).toInt();
@@ -328,6 +390,7 @@ void move_stepper()
 {
   if (motor1_steps > 0)
   {
+    // Serial.println("motor 1 running: " + String(motor1_steps) + "\tDELAY: " + String(stepper1.DELAY_NUM));
     stepper1.setDir(motor1_direction);
     stepper1.step();
     motor1_steps--;
@@ -335,6 +398,7 @@ void move_stepper()
 
   if (motor2_steps > 0)
   {
+    // Serial.println("motor 2 running: " + String(motor2_steps) + "\tDELAY: " + String(stepper2.DELAY_NUM));
     stepper2.setDir(motor2_direction);
     stepper2.step();
     motor2_steps--;
