@@ -47,6 +47,7 @@ int motor4_direction = 0;
 
 int shift1 = 0;
 int shift2 = 0;
+int DELAY_MICROS = 500;
 
 int SHIFT_1 = 0;
 int SHIFT_2 = 0;
@@ -57,7 +58,13 @@ void setup()
 {
   Wire.begin(SLAVE_ADD);
 
-  pinMode(SERVO, OUTPUT);
+  ESP32PWM::allocateTimer(0);
+  ESP32PWM::allocateTimer(1);
+  ESP32PWM::allocateTimer(2);
+  ESP32PWM::allocateTimer(3);
+  gripper.setPeriodHertz(50); // standard 50 hz servo
+  gripper.attach(SERVO, 1000, 2000);
+
   pinMode(CLK, OUTPUT);
   pinMode(DAT, OUTPUT);
   pinMode(LAT, OUTPUT);
@@ -66,8 +73,6 @@ void setup()
   stepper2.begin(DIR2, STP2, SHIFT_1_ptr, SHIFT_2_ptr, 1, 3, 4, 5, 6);
   stepper3.begin(DIR3, STP3, SHIFT_1_ptr, SHIFT_2_ptr, 2, 7, 0, 1, 2);
   stepper4.begin(DIR4, STP4, SHIFT_1_ptr, SHIFT_2_ptr, 2, 3, 4, 5, 6);
-
-  gripper.attach(SERVO);
 
   // Wire.setClock(400000);
   Wire.onReceive(receiveEvent); // register event
@@ -85,6 +90,14 @@ void loop()
     if (command == "who u?")
     {
       Serial.println("Ako si: Slave");
+    }
+    else if (command == "show enabled")
+    {
+      Serial.print("STEP1: " + String(stepper1.isEnabled()));
+      Serial.print("\t|\tSTEP2: " + String(stepper2.isEnabled()));
+      Serial.print("\t|\tSTEP3: " + String(stepper3.isEnabled()));
+      Serial.print("\t|\tSTEP4: " + String(stepper4.isEnabled()));
+      Serial.println("");
     }
     else
     {
@@ -185,11 +198,18 @@ void receiveEvent(int howMany)
     int ms2 = received.substring(6, 7).toInt();
     int ms3 = received.substring(7, 8).toInt();
 
+    Serial.print("Module No: " + String(motor_index));
+    Serial.print("\t|\tMS1: " + String(ms1));
+    Serial.print("\t|\tMS2: " + String(ms2));
+    Serial.print("\t|\tMS3: " + String(ms3));
+    Serial.println("");
+
     set_stepper_reso(motor_index, ms1, ms2, ms3);
   }
   else if (outputType == "ENAB")
   {
     int enable_num = received.substring(4, 5).toInt();
+    Serial.println("Enable num: " + String(enable_num));
 
     switch (enable_num)
     {
@@ -198,24 +218,30 @@ void receiveEvent(int howMany)
       stepper2.disableMotor();
       stepper3.disableMotor();
       stepper4.disableMotor();
+      Serial.println("disabling all motor");
       break;
     case 1:
       stepper1.enableMotor();
+      Serial.println("Enable Motor 1");
       break;
     case 2:
       stepper2.enableMotor();
+      Serial.println("Enable Motor 2");
       break;
     case 3:
       stepper3.enableMotor();
+      Serial.println("Enable Motor 3");
       break;
     case 4:
       stepper4.enableMotor();
+      Serial.println("Enable Motor 4");
       break;
     case 5:
       stepper1.enableMotor();
       stepper2.enableMotor();
       stepper3.enableMotor();
       stepper4.enableMotor();
+      Serial.println("Enable All Motor");
       break;
     default:
       Serial.println("Invalid ENABLE num: " + String(enable_num));
@@ -224,13 +250,14 @@ void receiveEvent(int howMany)
   }
   else if (outputType == "DELA")
   {
-
     int delay = received.substring(4, received.length()).toInt();
+    DELAY_MICROS = delay;
 
     stepper1.setDelay(delay);
     stepper2.setDelay(delay);
     stepper3.setDelay(delay);
     stepper4.setDelay(delay);
+    Serial.println("Setting Delay: " + String(DELAY_MICROS));
   }
   else if (outputType == "STOP")
   {

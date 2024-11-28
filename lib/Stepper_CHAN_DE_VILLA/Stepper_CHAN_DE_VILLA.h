@@ -29,6 +29,8 @@ public:
     void enableMotor();
     void disableMotor();
     bool isEnabled();
+    void stepHigh();
+    void stepLow();
 
 private:
     void sendData();

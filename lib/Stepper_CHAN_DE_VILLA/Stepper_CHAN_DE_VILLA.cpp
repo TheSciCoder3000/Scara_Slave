@@ -26,9 +26,19 @@ void Stepper::setDelay(int delay)
 void Stepper::step()
 {
     digitalWrite(STEP_PIN, HIGH);
-    delayMicros(DELAY_NUM);
+    delayMicroseconds(DELAY_NUM);
     digitalWrite(STEP_PIN, LOW);
-    delayMicros(DELAY_NUM);
+    delayMicroseconds(DELAY_NUM);
+}
+
+void Stepper::stepHigh()
+{
+    digitalWrite(STEP_PIN, 1);
+}
+
+void Stepper::stepLow()
+{
+    digitalWrite(STEP_PIN, 0);
 }
 
 void Stepper::setDir(int direction)
