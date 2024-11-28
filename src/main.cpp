@@ -250,14 +250,28 @@ void receiveEvent(int howMany)
   }
   else if (outputType == "DELA")
   {
-    int delay = received.substring(4, received.length()).toInt();
+    int motor_indx = received.substring(4, 5).toInt();
+    int delay = received.substring(5, received.length()).toInt();
     DELAY_MICROS = delay;
 
-    stepper1.setDelay(delay);
-    stepper2.setDelay(delay);
-    stepper3.setDelay(delay);
-    stepper4.setDelay(delay);
-    Serial.println("Setting Delay: " + String(DELAY_MICROS));
+    switch (motor_indx)
+    {
+    case 1:
+      stepper1.setDelay(delay);
+      break;
+    case 2:
+      stepper2.setDelay(delay);
+      break;
+    case 3:
+      stepper3.setDelay(delay);
+      break;
+    case 4:
+      stepper4.setDelay(delay);
+      break;
+    default:
+      Serial.println("Invalid DELA command: " + received);
+      break;
+    }
   }
   else if (outputType == "STOP")
   {
