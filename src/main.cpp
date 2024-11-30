@@ -35,15 +35,15 @@ void move_stepper();
 void set_stepper_reso(int, int, int, int);
 int x;
 
-int motor1_steps = 0;
-int motor2_steps = 0;
-int motor3_steps = 0;
-int motor4_steps = 0;
+// int motor1_steps = 0;
+// int motor2_steps = 0;
+// int motor3_steps = 0;
+// int motor4_steps = 0;
 
-int motor1_direction = 0;
-int motor2_direction = 0;
-int motor3_direction = 0;
-int motor4_direction = 0;
+// int motor1_direction = 0;
+// int motor2_direction = 0;
+// int motor3_direction = 0;
+// int motor4_direction = 0;
 
 int shift1 = 0;
 int shift2 = 0;
@@ -60,9 +60,6 @@ int pwm_channel_3 = 6;
 int pwm_channel_4 = 7;
 int pwm_res = 8;
 
-TaskHandle_t Motor12_task;
-TaskHandle_t Motor34_task;
-
 void setup()
 {
   Wire.begin(SLAVE_ADD);
@@ -78,17 +75,16 @@ void setup()
   pinMode(DAT, OUTPUT);
   pinMode(LAT, OUTPUT);
 
-  stepper1.begin(DIR1, STP1, SHIFT_1_ptr, SHIFT_2_ptr, 1, 7, 0, 1, 2);
-  stepper2.begin(DIR2, STP2, SHIFT_1_ptr, SHIFT_2_ptr, 1, 3, 4, 5, 6);
-  stepper3.begin(DIR3, STP3, SHIFT_1_ptr, SHIFT_2_ptr, 2, 7, 0, 1, 2);
-  stepper4.begin(DIR4, STP4, SHIFT_1_ptr, SHIFT_2_ptr, 2, 3, 4, 5, 6);
+  stepper1.begin(DIR1, STP1, SHIFT_1_ptr, SHIFT_2_ptr, 1, 7, 0, 1, 2, pwm_channel_1);
+  stepper2.begin(DIR2, STP2, SHIFT_1_ptr, SHIFT_2_ptr, 1, 3, 4, 5, 6, pwm_channel_2);
+  stepper3.begin(DIR3, STP3, SHIFT_1_ptr, SHIFT_2_ptr, 2, 7, 0, 1, 2, pwm_channel_3);
+  stepper4.begin(DIR4, STP4, SHIFT_1_ptr, SHIFT_2_ptr, 2, 3, 4, 5, 6, pwm_channel_4);
 
-  ledcAttachPin(stepper1.STEP_PIN, pwm_channel_1);
-  ledcAttachPin(stepper2.STEP_PIN, pwm_channel_2);
-  ledcAttachPin(stepper3.STEP_PIN, pwm_channel_3);
-  ledcAttachPin(stepper4.STEP_PIN, pwm_channel_4);
+  digitalWrite(stepper1.STEP_PIN, 0);
+  digitalWrite(stepper2.STEP_PIN, 0);
+  digitalWrite(stepper3.STEP_PIN, 0);
+  digitalWrite(stepper4.STEP_PIN, 0);
 
-  // Wire.setClock(400000);
   Wire.onReceive(receiveEvent); // register event
   Serial.begin(9600);
 }
@@ -112,24 +108,6 @@ void loop()
       Serial.print("\t|\tSTEP3: " + String(stepper3.isEnabled()));
       Serial.print("\t|\tSTEP4: " + String(stepper4.isEnabled()));
       Serial.println("");
-    }
-    else if (command.substring(0, 4) == "PULS")
-    {
-      int cmd_delay = command.substring(4, command.length()).toInt();
-
-      int pwm_channel = 0;
-      int pwm_freq = cmd_delay;
-      int pwm_res = 8;
-
-      int out_pin = stepper1.STEP_PIN;
-
-      ledcSetup(pwm_channel, pwm_freq, pwm_res);
-      ledcAttachPin(out_pin, pwm_channel);
-
-      ledcWrite(pwm_channel, 128);
-      delay(1000);
-
-      ledcWrite(pwm_channel, 0);
     }
     else
     {
@@ -200,20 +178,20 @@ void receiveEvent(int howMany)
     switch (motor_num)
     {
     case 1:
-      motor1_steps = motor_steps;
-      motor1_direction = motor_direction;
+      stepper1.NUM_STEPS = motor_steps;
+      stepper1.setDir(motor_direction);
       break;
     case 2:
-      motor2_steps = motor_steps;
-      motor2_direction = motor_direction;
+      stepper2.NUM_STEPS = motor_steps;
+      stepper2.setDir(motor_direction);
       break;
     case 3:
-      motor3_steps = motor_steps;
-      motor3_direction = motor_direction;
+      stepper3.NUM_STEPS = motor_steps;
+      stepper3.setDir(motor_direction);
       break;
     case 4:
-      motor4_steps = motor_steps;
-      motor4_direction = motor_direction;
+      stepper4.NUM_STEPS = motor_steps;
+      stepper4.setDir(motor_direction);
       break;
 
     default:
@@ -232,60 +210,20 @@ void receiveEvent(int howMany)
     switch (motor_num)
     {
     case 1:
-      motor1_direction = motor_direction;
-      if (motor_delay == 0)
-      {
-        motor1_steps = 0;
-      }
-      else
-      {
-        stepper1.setDelay(motor_delay);
-        motor1_steps = 100;
-        int pwm_freq = 1 / (stepper1.DELAY_NUM * pow(10, -6));
-        ledcSetup(pwm_channel_1, pwm_freq, pwm_res);
-      }
+      stepper1.setDir(motor_direction);
+      stepper1.setFreq(motor_delay);
       break;
     case 2:
-      motor2_direction = motor_direction;
-      if (motor_delay == 0)
-      {
-        motor2_steps = 0;
-      }
-      else
-      {
-        stepper2.setDelay(motor_delay);
-        motor2_steps = 100;
-        int pwm_freq = 1 / (stepper2.DELAY_NUM * pow(10, -6));
-        ledcSetup(pwm_channel_2, pwm_freq, pwm_res);
-      }
+      stepper2.setDir(motor_direction);
+      stepper2.setFreq(motor_delay);
       break;
     case 3:
-      motor3_direction = motor_direction;
-      if (motor_delay == 0)
-      {
-        motor3_steps = 0;
-      }
-      else
-      {
-        stepper3.setDelay(motor_delay);
-        motor3_steps = 100;
-        int pwm_freq = 1 / (stepper3.DELAY_NUM * pow(10, -6));
-        ledcSetup(pwm_channel_3, pwm_freq, pwm_res);
-      }
+      stepper3.setDir(motor_direction);
+      stepper3.setFreq(motor_delay);
       break;
     case 4:
-      motor4_direction = motor_direction;
-      if (motor_delay == 0)
-      {
-        motor4_steps = 0;
-      }
-      else
-      {
-        stepper4.setDelay(motor_delay);
-        motor4_steps = 100;
-        int pwm_freq = 1 / (stepper4.DELAY_NUM * pow(10, -6));
-        ledcSetup(pwm_channel_4, pwm_freq, pwm_res);
-      }
+      stepper4.setDir(motor_direction);
+      stepper4.setFreq(motor_delay);
       break;
 
     default:
@@ -382,16 +320,16 @@ void receiveEvent(int howMany)
     switch (motor)
     {
     case 1:
-      motor1_steps = 0;
+      stepper1.NUM_STEPS = 0;
       break;
     case 2:
-      motor2_steps = 0;
+      stepper2.NUM_STEPS = 0;
       break;
     case 3:
-      motor3_steps = 0;
+      stepper3.NUM_STEPS = 0;
       break;
     case 4:
-      motor4_steps = 0;
+      stepper4.NUM_STEPS = 0;
       break;
 
     default:
@@ -428,53 +366,10 @@ void set_stepper_reso(int stepper_num, int res1, int res2, int res3)
 
 void move_stepper()
 {
-  if (motor1_steps > 0)
-  {
-    // Serial.println("motor 1 freq: " + String(1 / (stepper1.DELAY_NUM * pow(10, -6))));
-    stepper1.setDir(motor1_direction);
-    ledcWrite(pwm_channel_1, 128);
-  }
-  else
-  {
-    ledcWrite(pwm_channel_1, 0);
-    digitalWrite(stepper1.STEP_PIN, 0);
-  }
-
-  if (motor2_steps > 0)
-  {
-    // Serial.println("motor 2 freq: " + String(1 / (stepper2.DELAY_NUM * pow(10, -6))));
-    stepper2.setDir(motor2_direction);
-    ledcWrite(pwm_channel_2, 128);
-  }
-  else
-  {
-    ledcWrite(pwm_channel_2, 0);
-    digitalWrite(stepper2.STEP_PIN, 0);
-  }
-
-  if (motor3_steps > 0)
-  {
-    // Serial.println("motor 3 freq: " + String(1 / (stepper3.DELAY_NUM * pow(10, -6))));
-    stepper3.setDir(motor3_direction);
-    ledcWrite(pwm_channel_3, 128);
-  }
-  else
-  {
-    ledcWrite(pwm_channel_3, 0);
-    digitalWrite(stepper3.STEP_PIN, 0);
-  }
-
-  if (motor4_steps > 0)
-  {
-    // Serial.println("motor 4 running: " + String(motor4_steps) + "\tDELAY: " + String(stepper4.DELAY_NUM));
-    stepper4.setDir(motor4_direction);
-    ledcWrite(pwm_channel_4, 128);
-  }
-  else
-  {
-    ledcWrite(pwm_channel_4, 0);
-    digitalWrite(stepper4.STEP_PIN, 0);
-  }
+  stepper1.pwmStep();
+  stepper2.pwmStep();
+  stepper3.pwmStep();
+  stepper4.pwmStep();
 }
 
 // GRIPPER - CC INVERTED

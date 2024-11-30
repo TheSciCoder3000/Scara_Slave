@@ -1,10 +1,22 @@
 #include "Stepper_CHAN_DE_VILLA.h"
 #include "Arduino.h"
 
-void Stepper::begin(int dir_pin, int step_pin, int *shift_1, int *shift_2, int shift_type, int en_pin, int ms1_pin, int ms2_pin, int ms3_pin)
+void Stepper::begin(
+    int dir_pin,
+    int step_pin,
+    int *shift_1,
+    int *shift_2,
+    int shift_type,
+    int en_pin,
+    int ms1_pin,
+    int ms2_pin,
+    int ms3_pin,
+    int pwm_channel)
 {
     pinMode(dir_pin, OUTPUT);
     pinMode(step_pin, OUTPUT);
+
+    ledcAttachPin(step_pin, pwm_channel);
 
     STEP_PIN = step_pin;
     DIR_PIN = dir_pin;
@@ -16,6 +28,42 @@ void Stepper::begin(int dir_pin, int step_pin, int *shift_1, int *shift_2, int s
     SHIFT_1 = shift_1;
     SHIFT_2 = shift_2;
     SHIFT_TYPE = shift_type;
+    PWM_CHANNEL = pwm_channel;
+
+    NUM_STEPS = 0;
+}
+
+void Stepper::setupPwm(int frequency)
+{
+}
+
+void Stepper::pwmStep()
+{
+    if (NUM_STEPS > 0)
+    {
+        digitalWrite(DIR_PIN, DIRECTION);
+        ledcWrite(PWM_CHANNEL, 128);
+    }
+    else
+    {
+        ledcWrite(PWM_CHANNEL, 0);
+        digitalWrite(STEP_PIN, 0);
+    }
+}
+
+void Stepper::setFreq(int delay)
+{
+    if (delay == 0)
+    {
+        NUM_STEPS = 0;
+    }
+    else
+    {
+        setDelay(delay);
+        NUM_STEPS = 100;
+        int pwm_freq = 1 / (delay * pow(10, -6));
+        ledcSetup(PWM_CHANNEL, pwm_freq, 8);
+    }
 }
 
 void Stepper::setDelay(int delay)
@@ -44,6 +92,7 @@ void Stepper::stepLow()
 void Stepper::setDir(int direction)
 {
     digitalWrite(DIR_PIN, direction);
+    DIRECTION = direction;
 }
 
 void delayMicros(unsigned long delay_us)
