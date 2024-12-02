@@ -16,6 +16,7 @@ void Stepper::begin(
     pinMode(dir_pin, OUTPUT);
     pinMode(step_pin, OUTPUT);
 
+    ledcSetup(PWM_CHANNEL, 0, 8);
     ledcAttachPin(step_pin, pwm_channel);
 
     STEP_PIN = step_pin;
@@ -43,6 +44,7 @@ void Stepper::pwmStep()
     {
         digitalWrite(DIR_PIN, DIRECTION);
         ledcWrite(PWM_CHANNEL, 128);
+        Serial.println("Move Stepper: " + String(PWM_CHANNEL));
     }
     else
     {

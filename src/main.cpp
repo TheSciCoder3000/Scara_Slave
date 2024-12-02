@@ -2,6 +2,8 @@
 #include "Arduino.h"
 #include "Stepper_CHAN_DE_VILLA.h"
 #include "ESP32Servo.h"
+#include "utils.h"
+#include "math.h"
 
 #define CLK 25
 #define DAT 32
@@ -55,11 +57,12 @@ int *SHIFT_1_ptr = &SHIFT_1;
 int *SHIFT_2_ptr = &SHIFT_2;
 
 int pwm_channel_1 = 4;
-int pwm_channel_2 = 5;
-int pwm_channel_3 = 6;
-int pwm_channel_4 = 7;
+int pwm_channel_2 = 8;
+int pwm_channel_3 = 12;
+int pwm_channel_4 = 15;
 int pwm_res = 8;
 
+String *motor_commands = new String[4];
 void setup()
 {
   Wire.begin(SLAVE_ADD);
@@ -79,6 +82,11 @@ void setup()
   stepper2.begin(DIR2, STP2, SHIFT_1_ptr, SHIFT_2_ptr, 1, 3, 4, 5, 6, pwm_channel_2);
   stepper3.begin(DIR3, STP3, SHIFT_1_ptr, SHIFT_2_ptr, 2, 7, 0, 1, 2, pwm_channel_3);
   stepper4.begin(DIR4, STP4, SHIFT_1_ptr, SHIFT_2_ptr, 2, 3, 4, 5, 6, pwm_channel_4);
+
+  stepper1.setReso(1, 1, 1);
+  stepper2.setReso(1, 1, 1);
+  stepper3.setReso(1, 1, 1);
+  stepper4.setReso(1, 1, 1);
 
   digitalWrite(stepper1.STEP_PIN, 0);
   digitalWrite(stepper2.STEP_PIN, 0);
@@ -231,6 +239,43 @@ void receiveEvent(int howMany)
       break;
     }
   }
+  else if (outputType == "PARS")
+  {
+
+    splitString(received, ';', motor_commands);
+
+    for (int i = 0; i < 4; i++)
+    {
+
+      int motor_num = motor_commands[i].substring(4, 5).toInt();
+      int motor_delay = motor_commands[i].substring(7, motor_commands[i].length()).toInt();
+      int motor_direction = (motor_commands[i].substring(5, 7) == "CC" ? 0 : 1);
+
+      switch (motor_num)
+      {
+      case 1:
+        stepper1.setDir(motor_direction);
+        stepper1.setFreq(motor_delay);
+        break;
+      case 2:
+        stepper2.setDir(motor_direction);
+        stepper2.setFreq(motor_delay);
+        break;
+      case 3:
+        stepper3.setDir(motor_direction);
+        stepper3.setFreq(motor_delay);
+        break;
+      case 4:
+        stepper4.setDir(motor_direction);
+        stepper4.setFreq(motor_delay);
+        break;
+
+      default:
+        Serial.println("Invalid STEP Command!");
+        break;
+      }
+    }
+  }
   else if (outputType == "RESO")
   {
     int motor_index = received.substring(4, 5).toInt();
@@ -370,6 +415,22 @@ void move_stepper()
   stepper2.pwmStep();
   stepper3.pwmStep();
   stepper4.pwmStep();
+}
+
+void calc_angle(int x, int y, int z)
+{
+  double b = atan2(y, x) * (180 / 3.1415); // base angle
+
+  double l = sqrt(x * x + y * y); // x and y extension
+
+  double h = sqrt(l * l + z * z);
+
+  double phi = atan(z / l) * (180 / 3.1415);
+
+  double theta = acos((h / 2) / 75) * (180 / 3.1415);
+
+  double a1 = phi + theta; // angle for first part of the arm
+  double a2 = phi - theta; // angle for second part of the arm
 }
 
 // GRIPPER - CC INVERTED
