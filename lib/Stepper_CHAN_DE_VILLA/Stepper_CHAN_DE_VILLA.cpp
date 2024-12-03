@@ -44,7 +44,6 @@ void Stepper::pwmStep()
     {
         digitalWrite(DIR_PIN, DIRECTION);
         ledcWrite(PWM_CHANNEL, 128);
-        Serial.println("Move Stepper: " + String(PWM_CHANNEL));
     }
     else
     {

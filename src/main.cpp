@@ -174,7 +174,6 @@ void receiveEvent(int howMany)
   if (outputType == "SERV")
   {
     int servoDegree = received.substring(4, received.length()).toInt();
-    Serial.println("SERVO: " + String(servoDegree));
     gripper.write(servoDegree);
   }
   else if (outputType == "STEP")
